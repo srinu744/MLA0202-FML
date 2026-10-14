@@ -1,0 +1,103 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+
+# Step 1: Load the dataset
+iris = load_iris()
+X = iris.data
+y = iris.target.reshape(-1, 1)
+
+# Step 2: Convert target values to one-hot encoding
+encoder = OneHotEncoder(sparse_output=False)
+Y = encoder.fit_transform(y)
+
+# Step 3: Split the dataset
+X_train, X_test, Y_train, Y_test = train_test_split(
+    X, Y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Step 4: Normalize input data
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Step 5: Initialize the neural network
+np.random.seed(42)
+input_neurons = X_train.shape[1]
+hidden_neurons = 8
+output_neurons = Y_train.shape[1]
+
+W1 = np.random.randn(input_neurons, hidden_neurons) * 0.1
+b1 = np.zeros((1, hidden_neurons))
+W2 = np.random.randn(hidden_neurons, output_neurons) * 0.1
+b2 = np.zeros((1, output_neurons))
+
+learning_rate = 0.1
+epochs = 2000
+loss_history = []
+
+def sigmoid(x):
+    x = np.clip(x, -500, 500)
+    return 1 / (1 + np.exp(-x))
+
+# Step 6: Train using backpropagation
+for epoch in range(epochs):
+
+    # Forward propagation
+    hidden_input = np.dot(X_train, W1) + b1
+    hidden_output = sigmoid(hidden_input)
+
+    final_input = np.dot(hidden_output, W2) + b2
+    final_output = sigmoid(final_input)
+
+    # Calculate error
+    error = Y_train - final_output
+    loss = np.mean(error ** 2)
+    loss_history.append(loss)
+
+    # Backpropagation
+    d_output = error * final_output * (1 - final_output)
+    d_hidden = np.dot(d_output, W2.T) * hidden_output * (1 - hidden_output)
+
+    # Update weights and biases
+    W2 += learning_rate * np.dot(hidden_output.T, d_output) / len(X_train)
+    b2 += learning_rate * np.mean(d_output, axis=0, keepdims=True)
+
+    W1 += learning_rate * np.dot(X_train.T, d_hidden) / len(X_train)
+    b1 += learning_rate * np.mean(d_hidden, axis=0, keepdims=True)
+
+# Step 7: Test the neural network
+hidden_test = sigmoid(np.dot(X_test, W1) + b1)
+output_test = sigmoid(np.dot(hidden_test, W2) + b2)
+
+y_pred = np.argmax(output_test, axis=1)
+y_actual = np.argmax(Y_test, axis=1)
+
+accuracy = accuracy_score(y_actual, y_pred)
+
+print("Artificial Neural Network using Backpropagation")
+print("Number of training samples:", len(X_train))
+print("Number of testing samples:", len(X_test))
+print("Test Accuracy:", round(accuracy * 100, 2), "%")
+
+# Step 8: Plot training error
+plt.figure(figsize=(8, 5))
+plt.plot(loss_history)
+plt.title("ANN Training Error")
+plt.xlabel("Epoch")
+plt.ylabel("Mean Squared Error")
+plt.grid(True)
+plt.show()
+
+# Step 9: Display confusion matrix
+cm = confusion_matrix(y_actual, y_pred)
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=cm,
+    display_labels=iris.target_names
+)
+disp.plot(cmap="Blues")
+plt.title("Confusion Matrix")
+plt.show()
