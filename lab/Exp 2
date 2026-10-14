@@ -1,0 +1,113 @@
+import pandas as pd
+
+# Step 1: Create and save the training dataset as CSV
+data = {
+    'Sky': ['Sunny', 'Sunny', 'Rainy', 'Sunny'],
+    'AirTemp': ['Warm', 'Warm', 'Cold', 'Warm'],
+    'Humidity': ['Normal', 'High', 'High', 'High'],
+    'Wind': ['Strong', 'Strong', 'Strong', 'Strong'],
+    'Water': ['Warm', 'Warm', 'Warm', 'Cool'],
+    'Forecast': ['Same', 'Same', 'Change', 'Same'],
+    'EnjoySport': ['Yes', 'Yes', 'No', 'Yes']
+}
+
+df = pd.DataFrame(data)
+df.to_csv('training_data.csv', index=False)
+
+# Step 2: Read the CSV file
+df = pd.read_csv('training_data.csv')
+print("Training Data:")
+print(df)
+
+# Step 3: Candidate-Elimination algorithm
+attributes = list(df.columns[:-1])
+n = len(attributes)
+
+S = ['0'] * n
+G = [['?'] * n]
+
+def covers(h, x):
+    return all(a == '?' or a == v for a, v in zip(h, x))
+
+def more_general_or_equal(h1, h2):
+    return all(a == '?' or a == b
+               for a, b in zip(h1, h2))
+
+def minimal_generalizations(h, x):
+    result = h.copy()
+    for i in range(n):
+        if result[i] == '0':
+            result[i] = x[i]
+        elif result[i] != x[i]:
+            result[i] = '?'
+    return result
+
+def minimal_specializations(h, x, domains, S):
+    results = []
+    for i in range(n):
+        if h[i] == '?':
+            for value in domains[i]:
+                if value != x[i]:
+                    new_h = h.copy()
+                    new_h[i] = value
+                    if any(more_general_or_equal(new_h, s)
+                           for s in S):
+                        results.append(new_h)
+    return results
+
+domains = [df[attr].unique().tolist() for attr in attributes]
+
+# Process each training example
+for _, row in df.iterrows():
+    x = [row[a] for a in attributes]
+    label = row['EnjoySport']
+
+    if label == 'Yes':
+        # Remove hypotheses from G that do not cover x
+        G = [g for g in G if covers(g, x)]
+
+        # Generalize S when necessary
+        if not covers(S, x):
+            S = minimal_generalizations(S, x)
+
+        # Keep only maximally specific hypotheses
+        S = [s for s in S if any(
+            more_general_or_equal(g, s) for g in G)]
+
+    else:
+        # Remove hypotheses from S that cover negative example
+        if covers(S, x):
+            S = []
+
+        # Specialize G to exclude the negative example
+        new_G = []
+        for g in G:
+            if covers(g, x):
+                new_G.extend(
+                    minimal_specializations(g, x, domains, S)
+                )
+            else:
+                new_G.append(g)
+
+        # Keep maximally general hypotheses
+        G = [
+            g for g in new_G
+            if not any(
+                g != other and more_general_or_equal(g, other)
+                for other in new_G
+            )
+        ]
+
+    print(f"\nExample: {x}, Class: {label}")
+    print("S boundary:", S)
+    print("G boundary:", G)
+
+print("\nFinal Specific Boundary S:")
+for h in S:
+    print(h)
+
+print("\nFinal General Boundary G:")
+for h in G:
+    print(h)
+
+print("\nVersion Space boundaries describe all consistent hypotheses.")
