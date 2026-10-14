@@ -1,0 +1,82 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.preprocessing import LabelEncoder
+
+# Step 1: Create the dataset
+data = {
+    'Outlook': ['Sunny', 'Sunny', 'Overcast', 'Rain',
+                'Rain', 'Rain', 'Overcast', 'Sunny',
+                'Sunny', 'Rain', 'Sunny', 'Overcast',
+                'Overcast', 'Rain'],
+    'Temperature': ['Hot', 'Hot', 'Hot', 'Mild',
+                    'Cool', 'Cool', 'Cool', 'Mild',
+                    'Cool', 'Mild', 'Mild', 'Mild',
+                    'Hot', 'Mild'],
+    'Humidity': ['High', 'High', 'High', 'High',
+                 'Normal', 'Normal', 'Normal', 'High',
+                 'Normal', 'Normal', 'Normal', 'High',
+                 'Normal', 'High'],
+    'Wind': ['Weak', 'Strong', 'Weak', 'Weak',
+             'Weak', 'Strong', 'Strong', 'Weak',
+             'Weak', 'Weak', 'Strong', 'Strong',
+             'Weak', 'Strong'],
+    'Play': ['No', 'No', 'Yes', 'Yes', 'Yes', 'No',
+             'Yes', 'No', 'Yes', 'Yes', 'Yes', 'Yes',
+             'Yes', 'No']
+}
+
+df = pd.DataFrame(data)
+
+print("Training Dataset:")
+print(df)
+
+# Step 2: Encode categorical values into numbers
+encoders = {}
+X = df.drop('Play', axis=1).copy()
+y = df['Play'].copy()
+
+for col in X.columns:
+    encoders[col] = LabelEncoder()
+    X[col] = encoders[col].fit_transform(X[col])
+
+target_encoder = LabelEncoder()
+y_encoded = target_encoder.fit_transform(y)
+
+# Step 3: Build the ID3 decision tree
+model = DecisionTreeClassifier(
+    criterion='entropy',
+    random_state=0
+)
+model.fit(X, y_encoded)
+
+# Step 4: Visualize the decision tree
+plt.figure(figsize=(16, 8))
+plot_tree(
+    model,
+    feature_names=X.columns,
+    class_names=target_encoder.classes_,
+    filled=True,
+    rounded=True
+)
+plt.title("ID3 Decision Tree")
+plt.show()
+
+# Step 5: Classify a new sample
+new_sample = {
+    'Outlook': 'Sunny',
+    'Temperature': 'Cool',
+    'Humidity': 'Normal',
+    'Wind': 'Weak'
+}
+
+sample_df = pd.DataFrame([new_sample])
+
+for col in sample_df.columns:
+    sample_df[col] = encoders[col].transform(sample_df[col])
+
+prediction = model.predict(sample_df)
+result = target_encoder.inverse_transform(prediction)
+
+print("\nNew Sample:", new_sample)
+print("Predicted Class:", result[0])
