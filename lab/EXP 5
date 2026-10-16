@@ -1,0 +1,53 @@
+# Logistic Regression using Python
+
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+
+# Step 1: Load the dataset
+data = load_breast_cancer()
+X = data.data
+y = data.target
+
+# Step 2: Split the dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Step 3: Standardize the data
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Step 4: Create and train the model
+model = LogisticRegression(max_iter=5000)
+model.fit(X_train, y_train)
+
+# Step 5: Predict the test data
+y_pred = model.predict(X_test)
+
+# Step 6: Calculate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy:", round(accuracy * 100, 2), "%")
+
+# Step 7: Display confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+print("\nConfusion Matrix:")
+print(cm)
+
+# Step 8: Plot confusion matrix using Matplotlib
+display = ConfusionMatrixDisplay(
+    confusion_matrix=cm,
+    display_labels=data.target_names
+)
+display.plot(cmap="Blues", values_format="d")
+plt.title("Logistic Regression - Confusion Matrix")
+plt.show()
+
+# Step 9: Display sample predictions
+print("\nFirst 10 Predictions:")
+print("Predicted:", y_pred[:10])
+print("Actual:   ", y_test[:10])
