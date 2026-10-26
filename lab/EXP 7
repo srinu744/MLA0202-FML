@@ -1,0 +1,56 @@
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay
+
+# Step 1: Generate a sample dataset
+X, y = make_classification(
+    n_samples=100,
+    n_features=2,
+    n_informative=2,
+    n_redundant=0,
+    n_clusters_per_class=1,
+    random_state=42
+)
+
+# Step 2: Split the dataset into training and testing data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Step 3: Create the K-NN model
+knn = KNeighborsClassifier(n_neighbors=5)
+
+# Step 4: Train the model
+knn.fit(X_train, y_train)
+
+# Step 5: Predict the test data
+y_pred = knn.predict(X_test)
+
+# Step 6: Display accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("K-NN Classification Results")
+print("Number of Neighbours (K): 5")
+print("Accuracy:", round(accuracy * 100, 2), "%")
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Step 7: Plot the dataset and classification results
+plt.figure(figsize=(8, 5))
+plt.scatter(
+    X_test[:, 0], X_test[:, 1],
+    c=y_pred, cmap="coolwarm",
+    edgecolors="black", s=80
+)
+plt.title("K-Nearest Neighbours Classification")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.colorbar(label="Predicted Class")
+plt.grid(True)
+plt.show()
+
+# Step 8: Display confusion matrix
+ConfusionMatrixDisplay.from_predictions(y_test, y_pred)
+plt.title("K-NN Confusion Matrix")
+plt.show()
