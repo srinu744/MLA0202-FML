@@ -1,0 +1,83 @@
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+# Create mobile dataset
+data = {
+    'RAM': [2, 3, 4, 4, 6, 6, 8, 8, 12, 12],
+    'Storage': [16, 32, 32, 64, 64, 128, 128, 256, 256, 512],
+    'Battery': [2500, 3000, 3500, 4000, 4000,
+                4500, 5000, 5000, 5500, 6000],
+    'Camera': [8, 12, 13, 16, 20, 24, 32, 48, 50, 108],
+    'Price_Range': [0, 0, 0, 1, 1, 1, 2, 2, 3, 3]
+}
+
+df = pd.DataFrame(data)
+
+# Input and output
+X = df[['RAM', 'Storage', 'Battery', 'Camera']]
+y = df['Price_Range']
+
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Create model
+model = RandomForestClassifier(
+    n_estimators=100, random_state=42
+)
+
+# Train model
+model.fit(X_train, y_train)
+
+# Predict test data
+y_pred = model.predict(X_test)
+
+# Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print("Model Accuracy:", accuracy * 100, "%")
+
+# Predict new mobile price range
+new_mobile = pd.DataFrame(
+    [[8, 128, 5000, 48]],
+    columns=['RAM', 'Storage', 'Battery', 'Camera']
+)
+
+prediction = model.predict(new_mobile)
+
+price_ranges = {
+    0: "Low Cost",
+    1: "Medium Cost",
+    2: "High Cost",
+    3: "Premium Cost"
+}
+
+print("Predicted Mobile Price:",
+      price_ranges[prediction[0]])
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+
+plt.figure(figsize=(6, 4))
+plt.imshow(cm, cmap='Blues')
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.colorbar()
+plt.show()
+
+# Mobile price distribution
+plt.figure(figsize=(7, 4))
+df['Price_Range'].value_counts().sort_index().plot(
+    kind='bar', color='skyblue'
+)
+plt.title("Mobile Price Range Distribution")
+plt.xlabel("Price Category")
+plt.ylabel("Number of Mobiles")
+plt.show()
